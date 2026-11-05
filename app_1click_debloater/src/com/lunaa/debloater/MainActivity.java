@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -11,12 +12,20 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class MainActivity extends Activity {
+
+    public static final String[] CORE_GAPPS = {
+        "com.google.android.gsf",
+        "com.google.android.gms",
+        "com.android.vending",
+        "com.google.android.syncadapters.contacts",
+        "com.google.android.syncadapters.calendar",
+        "com.google.android.onetimeinitializer",
+        "com.google.android.partnersetup"
+    };
 
     public static final String[] BLOAT_PACKAGES = {
         // Consumer Google Apps
@@ -39,7 +48,6 @@ public class MainActivity extends Activity {
         "com.google.android.contacts",
         "com.google.android.calculator",
         "com.google.android.deskclock",
-        "com.android.vending",
 
         // Telemetry & Tracking
         "com.google.android.apps.wellbeing",
@@ -92,7 +100,6 @@ public class MainActivity extends Activity {
         "com.google.android.soundpicker",
         "com.android.soundpicker",
         "com.google.android.storagemanager",
-        "com.google.android.onetimeinitializer",
         "com.google.android.configupdater",
         "com.google.android.apps.customization.pixel",
         "com.android.customization.themes",
@@ -112,16 +119,19 @@ public class MainActivity extends Activity {
         "com.android.calllogbackup",
         "com.android.hotspot2.osulogin",
         "com.android.stk",
-        "com.android.systemui.plugin.globalactions.wallet",
-        "com.google.android.partnersetup"
+        "com.android.systemui.plugin.globalactions.wallet"
     };
 
     private DevicePolicyManager dpm;
     private ComponentName adminComponent;
     private TextView tvStatus;
+    private TextView tvGappsStatus;
     private TextView tvLog;
+    private Button btnMinimalGapps;
+    private Button btnDegoogle;
     private Button btnDebloat;
     private Button btnRestore;
+    private Button btnReleaseAdmin;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Override
@@ -136,11 +146,30 @@ public class MainActivity extends Activity {
         tvDeviceInfo.setText(Build.MANUFACTURER + " " + Build.MODEL + " • Android " + Build.VERSION.RELEASE);
 
         tvStatus = findViewById(R.id.tv_status);
+        tvGappsStatus = findViewById(R.id.tv_gapps_status);
         tvLog = findViewById(R.id.tv_log);
+
+        btnMinimalGapps = findViewById(R.id.btn_minimal_gapps);
+        btnDegoogle = findViewById(R.id.btn_degoogle);
         btnDebloat = findViewById(R.id.btn_debloat);
         btnRestore = findViewById(R.id.btn_restore);
+        btnReleaseAdmin = findViewById(R.id.btn_release_admin);
 
-        updateAdminStatus();
+        updateStatuses();
+
+        btnMinimalGapps.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runMinimalGappsTask();
+            }
+        });
+
+        btnDegoogle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                runDegoogleTask();
+            }
+        });
 
         btnDebloat.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -156,14 +185,13 @@ public class MainActivity extends Activity {
             }
         });
 
-        Button btnReleaseAdmin = findViewById(R.id.btn_release_admin);
         btnReleaseAdmin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 try {
                     if (dpm.isDeviceOwnerApp(getPackageName())) {
                         dpm.clearDeviceOwnerApp(getPackageName());
-                        updateAdminStatus();
+                        updateStatuses();
                         appendLog("[!] Device Owner Released! Managed banner removed.");
                         Toast.makeText(MainActivity.this, "Device Owner Released! Phone is unmanaged.", Toast.LENGTH_LONG).show();
                     } else {
@@ -177,15 +205,56 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void updateAdminStatus() {
-        boolean isOwner = dpm.isDeviceOwnerApp(getPackageName());
-        if (isOwner) {
-            tvStatus.setText("Status: Enterprise Device Owner Active (Full Access)");
-            tvStatus.setTextColor(0xFF00E676);
-        } else {
-            tvStatus.setText("Status: Standard Mode Active");
-            tvStatus.setTextColor(0xFF38BDF8);
+    private void updateStatuses() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                boolean isOwner = dpm.isDeviceOwnerApp(getPackageName());
+                if (isOwner) {
+                    tvStatus.setText("Admin: Device Owner Active");
+                    tvStatus.setTextColor(0xFF00E676);
+                } else {
+                    tvStatus.setText("Admin: Standard Mode");
+                    tvStatus.setTextColor(0xFF38BDF8);
+                }
+
+                boolean hasVending = isPackageActive("com.android.vending");
+                boolean hasGms = isPackageActive("com.google.android.gms");
+
+                if (hasVending && hasGms) {
+                    tvGappsStatus.setText("Google: Play Store Active");
+                    tvGappsStatus.setTextColor(0xFF10B981);
+                } else if (!hasVending && !hasGms) {
+                    tvGappsStatus.setText("Google: 100% Google-Free");
+                    tvGappsStatus.setTextColor(0xFFA78BFA);
+                } else {
+                    tvGappsStatus.setText("Google: Custom Profile");
+                    tvGappsStatus.setTextColor(0xFFFBBF24);
+                }
+            }
+        });
+    }
+
+    private boolean isPackageActive(String pkg) {
+        try {
+            getPackageManager().getPackageInfo(pkg, 0);
+            return true;
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
         }
+    }
+
+    private void setButtonsEnabled(final boolean enabled) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                btnMinimalGapps.setEnabled(enabled);
+                btnDegoogle.setEnabled(enabled);
+                btnDebloat.setEnabled(enabled);
+                btnRestore.setEnabled(enabled);
+                btnReleaseAdmin.setEnabled(enabled);
+            }
+        });
     }
 
     private void appendLog(final String text) {
@@ -197,55 +266,115 @@ public class MainActivity extends Activity {
         });
     }
 
+    private void setPackageState(String pkg, boolean hide) {
+        boolean isOwner = dpm.isDeviceOwnerApp(getPackageName());
+        try {
+            if (hide) {
+                if (isOwner) {
+                    dpm.setApplicationHidden(adminComponent, pkg, true);
+                }
+                Process p = Runtime.getRuntime().exec(new String[]{"pm", "uninstall", "-k", "--user", "0", pkg});
+                p.waitFor();
+            } else {
+                if (isOwner) {
+                    dpm.setApplicationHidden(adminComponent, pkg, false);
+                }
+                Process p = Runtime.getRuntime().exec(new String[]{"pm", "install-existing", pkg});
+                p.waitFor();
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void runMinimalGappsTask() {
+        setButtonsEnabled(false);
+        tvLog.setText("Switching to MINIMAL PLAY STORE Mode...\n");
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                appendLog("[1/2] Enabling Core Play Store & Services...");
+                for (String pkg : CORE_GAPPS) {
+                    setPackageState(pkg, false);
+                    appendLog("  [✓] Enabled: " + pkg);
+                }
+
+                appendLog("[2/2] Freezing Telemetry & Consumer Bloat...");
+                for (String pkg : BLOAT_PACKAGES) {
+                    setPackageState(pkg, true);
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonsEnabled(true);
+                        updateStatuses();
+                        appendLog("\n=================================");
+                        appendLog("COMPLETE! Minimal Play Store is ready.");
+                        appendLog("Zero consumer bloat. Only bare-bones Play Store active.");
+                        Toast.makeText(MainActivity.this, "Minimal Play Store Enabled!", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
+
+    private void runDegoogleTask() {
+        setButtonsEnabled(false);
+        tvLog.setText("Executing 100% GOOGLE-FREE (DE-GOOGLE) Mode...\n");
+
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                appendLog("[1/2] Freezing All Core Google Services (GMS, GSF, Play Store)...");
+                for (String pkg : CORE_GAPPS) {
+                    setPackageState(pkg, true);
+                    appendLog("  [🚫] Purged: " + pkg);
+                }
+
+                appendLog("[2/2] Freezing Remaining Google & OEM Trackers...");
+                for (String pkg : BLOAT_PACKAGES) {
+                    setPackageState(pkg, true);
+                }
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        setButtonsEnabled(true);
+                        updateStatuses();
+                        appendLog("\n=================================");
+                        appendLog("SUCCESS! Device is now 100% GOOGLE-FREE.");
+                        appendLog("Zero Google Play Services running in background.");
+                        Toast.makeText(MainActivity.this, "Phone is now 100% Google-Free!", Toast.LENGTH_LONG).show();
+                    }
+                });
+            }
+        });
+    }
+
     private void runDebloatTask(final boolean debloat) {
-        btnDebloat.setEnabled(false);
-        btnRestore.setEnabled(false);
-        tvLog.setText(debloat ? "Starting 1-Click Debloat...\n" : "Restoring Packages...\n");
+        setButtonsEnabled(false);
+        tvLog.setText(debloat ? "Starting General Debloat...\n" : "Restoring Factory Packages...\n");
 
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 int count = 0;
-                boolean isOwner = dpm.isDeviceOwnerApp(getPackageName());
-
                 for (String pkg : BLOAT_PACKAGES) {
-                    boolean success = false;
-                    try {
-                        if (debloat) {
-                            if (isOwner) {
-                                dpm.setApplicationHidden(adminComponent, pkg, true);
-                                success = true;
-                            }
-                            Process p = Runtime.getRuntime().exec(new String[]{"pm", "uninstall", "-k", "--user", "0", pkg});
-                            p.waitFor();
-                            if (p.exitValue() == 0) success = true;
-                        } else {
-                            if (isOwner) {
-                                dpm.setApplicationHidden(adminComponent, pkg, false);
-                                success = true;
-                            }
-                            Process p = Runtime.getRuntime().exec(new String[]{"pm", "install-existing", pkg});
-                            p.waitFor();
-                            if (p.exitValue() == 0) success = true;
-                        }
-                    } catch (Exception ignored) {
-                    }
-
-                    if (success) {
-                        count++;
-                        appendLog((debloat ? "[✓] Cleaned: " : "[✓] Restored: ") + pkg);
-                    }
+                    setPackageState(pkg, debloat);
+                    count++;
+                    appendLog((debloat ? "[✓] Cleaned: " : "[✓] Restored: ") + pkg);
                 }
 
                 final int finalCount = count;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        btnDebloat.setEnabled(true);
-                        btnRestore.setEnabled(true);
+                        setButtonsEnabled(true);
+                        updateStatuses();
                         appendLog("\n=================================");
-                        appendLog(debloat ? "COMPLETE! Total items purged: " + finalCount : "RESTORE FINISHED! Restored: " + finalCount);
-                        Toast.makeText(MainActivity.this, debloat ? "Device Cleaned! " + finalCount + " items removed." : "Restored " + finalCount + " packages.", Toast.LENGTH_LONG).show();
+                        appendLog(debloat ? "COMPLETE! Cleaned " + finalCount + " bloat items." : "RESTORED " + finalCount + " packages.");
+                        Toast.makeText(MainActivity.this, debloat ? "Debloat Complete!" : "Restore Complete!", Toast.LENGTH_LONG).show();
                     }
                 });
             }

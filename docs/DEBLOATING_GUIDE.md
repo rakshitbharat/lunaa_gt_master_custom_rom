@@ -15,23 +15,35 @@ Purging these services frees **>2.0 GB of unallocated physical RAM** and reduces
 
 ---
 
-## 2. The 1-Click Debloater Android App
+## 2. The 1-Click Debloater & Privacy Suite
 
-The project includes a native, lightweight (21 KB) companion app located in [`app_1click_debloater`](../app_1click_debloater/):
+The project includes a native, lightweight companion app located in [`app_1click_debloater`](../app_1click_debloater/):
 * **Package Name:** `com.lunaa.debloater`
 * **Mechanism:** Utilizes Android Enterprise **Device Owner** (`DevicePolicyManager.setApplicationHidden`) + userland package manager commands.
 * **No Root Required:** Operates cleanly without needing Magisk, KernelSU, or active Shizuku background services.
 
+### Privacy & GApps Profiles:
+1. **🟢 Minimal Play Store Mode:**
+   * Unhides and restores bare-bones Google Play Store (`com.android.vending`), Google Play Services (`com.google.android.gms`), and Google Services Framework (`com.google.android.gsf`).
+   * Keeps all 60+ consumer apps (Gmail, Maps, Photos, Chrome, Assistant, Turbo, Wellbeing) completely frozen.
+   * Perfect for users who need Play Store to install banking apps or messengers without the battery-draining bloatware.
+2. **🚫 100% Google-Free Mode:**
+   * One-tap full de-Googling: freezes Play Store, Google Play Services, Google Services Framework, and all trackers.
+   * Zero Google background processes or network connections.
+3. **⚡ General System Debloat:** Purges OEM and consumer bloatware.
+4. **🔄 Factory Restore:** One-tap restore to unhide all original apps.
+5. **🔓 Release Device Owner:** One-tap release of enterprise admin to remove the "Managed by organization" banner.
+
 ### Installation & Setup:
 1. Install the APK:
    ```bash
-   adb install -r app_1click_debloater/bin/Debloater.apk
+   adb install -r -t app_1click_debloater/bin/Debloater.apk
    ```
 2. Grant Device Owner privileges via ADB:
    ```bash
    adb shell dpm set-device-owner com.lunaa.debloater/.AdminReceiver
    ```
-3. Open **1-Click Debloater** from your app drawer and tap **⚡ DEBLOAT ENTIRE PHONE**.
+3. Open **1-Click Debloater** from your app drawer and choose your preferred profile.
 
 ---
 

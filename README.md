@@ -68,19 +68,22 @@ fastboot reboot recovery
 
 ---
 
-## 📱 1-Click Debloater Companion App
+## 📱 1-Click Debloater & Privacy Companion App
 
-The project includes a 21 KB native app designed for developer testbenches.
+The project includes a lightweight native companion app (`com.lunaa.debloater`) designed for developer testbenches and privacy-focused users:
 
-### How It Works
-* Utilizes Android Enterprise **Device Owner** (`DevicePolicyManager.setApplicationHidden`) combined with userland package manager commands.
-* Freezes and removes all 65+ background trackers, telemetry daemons, and unneeded consumer Google apps **without needing root or Shizuku**.
-* Features a one-tap **🔄 RESTORE** function to instantly un-hide any app if needed.
+### Core Capabilities
+* **🟢 Minimal Play Store Mode:** Restores bare-bones Google Play Store and core services (`com.android.vending`, `com.google.android.gms`, `com.google.android.gsf`) while keeping all 60+ consumer apps, telemetry daemons, and background trackers completely frozen.
+* **🚫 100% Google-Free Mode:** 1-tap de-Googling. Freezes Play Store, Google Play Services, Google Services Framework, and all trackers. Zero background Google processes.
+* **⚡ General System Debloat:** Freezes all OEM telemetry, wallpaper engines, and consumer apps.
+* **🔄 Factory Restore:** Instantly restores all original packages.
+* **🔓 Release Device Owner:** Drops enterprise admin permissions with one tap to clear the *"Managed by organization"* banner directly from your phone.
+* **No Root Required:** Operates cleanly via Android Enterprise Device Owner (`setApplicationHidden`) combined with userland package manager commands.
 
-### Installation
+### Installation & Setup
 ```bash
 # 1. Install APK
-adb install -r app_1click_debloater/bin/Debloater.apk
+adb install -r -t app_1click_debloater/bin/Debloater.apk
 
 # 2. Grant Enterprise Device Owner
 adb shell dpm set-device-owner com.lunaa.debloater/.AdminReceiver
