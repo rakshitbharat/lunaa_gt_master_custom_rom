@@ -10,7 +10,18 @@
 .AppleDouble
 .LSOverride
 
+# Keystores, signing keys & secrets
+*.keystore
+*.jks
+*.p12
+*.key
+*.pem
+*.idsig
+.env
+.env.*
+
 # Build artifacts
 app_1click_debloater/build/
 app_1click_debloater/.gradle/
 app_1click_debloater/local.properties
+
