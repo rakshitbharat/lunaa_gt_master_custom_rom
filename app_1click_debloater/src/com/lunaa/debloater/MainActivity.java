@@ -155,6 +155,26 @@ public class MainActivity extends Activity {
                 runDebloatTask(false);
             }
         });
+
+        Button btnReleaseAdmin = findViewById(R.id.btn_release_admin);
+        btnReleaseAdmin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {
+                    if (dpm.isDeviceOwnerApp(getPackageName())) {
+                        dpm.clearDeviceOwnerApp(getPackageName());
+                        updateAdminStatus();
+                        appendLog("[!] Device Owner Released! Managed banner removed.");
+                        Toast.makeText(MainActivity.this, "Device Owner Released! Phone is unmanaged.", Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Not currently Device Owner.", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    appendLog("[ERROR] Failed to release: " + e.getMessage());
+                    Toast.makeText(MainActivity.this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
     }
 
     private void updateAdminStatus() {

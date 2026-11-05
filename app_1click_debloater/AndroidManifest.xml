@@ -12,6 +12,7 @@
     <application
         android:label="1-Click Debloater"
         android:icon="@drawable/ic_launcher"
+        android:testOnly="true"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <activity

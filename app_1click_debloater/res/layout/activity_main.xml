@@ -60,6 +60,16 @@
         android:textColor="#FFFFFF"
         android:background="#334155" />
 
+    <Button
+        android:id="@+id/btn_release_admin"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:layout_marginTop="10dp"
+        android:text="🔓 RELEASE DEVICE OWNER (UNMANAGE)"
+        android:textSize="13sp"
+        android:textColor="#FCA5A5"
+        android:background="#450A0A" />
+
     <!-- Terminal Output Log -->
     <TextView
         android:layout_width="wrap_content"
