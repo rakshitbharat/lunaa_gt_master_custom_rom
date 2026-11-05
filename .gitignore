@@ -1,0 +1,16 @@
+# Large ROM zip & partition images (hosted on official SourceForge / mirrors)
+*.zip
+*.img
+*.bin
+*.pb
+*.log
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build artifacts
+app_1click_debloater/build/
+app_1click_debloater/.gradle/
+app_1click_debloater/local.properties
